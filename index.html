@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Калькулятор воды для фильтр-кофе: бутылка из пяти концентратов 10 000 ppm, капли Rao/Perger в кружку, карта GH/KH, пересчёт капельного теста в ppm.">
+<title>Origami Water Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<style>
+/* Layout: та же система, что у Origami Brew Lab: липкая шапка, панель режимов, две колонки «цель → результат», ниже карта GH/KH и справочные карточки */
+:root{
+  --bg:#F4F2EC; --card:#FFFFFF; --sunk:#FBFAF6; --seg:#EFECE4;
+  --ink:#221D18; --ink2:#4C463E; --muted:#8A8177; --line:#E6E1D6;
+  --teal:#2F6F66; --teal-soft:#E4EEEC; --teal-line:#CFE0DD;
+  --copper:#BE7C43; --copper-soft:#F6EADD; --copper-line:#EAD3B7;
+  --danger:#A34B3C; --danger-soft:#F6E4E0;
+  --on-ink:#FFFFFF; --on-teal:#FFFFFF;
+  --shadow:0 1px 2px rgba(34,29,24,.05), 0 8px 24px -18px rgba(34,29,24,.25);
+  --r-lg:22px; --r-md:14px;
+  --font-body:'Golos Text',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-disp:'Unbounded','Golos Text',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#171512; --card:#211E1A; --sunk:#1B1916; --seg:#2C2823;
+    --ink:#EEE8DE; --ink2:#C9C0B4; --muted:#978D81; --line:#36312B;
+    --teal:#6BB5A8; --teal-soft:#1C2E2A; --teal-line:#2C4842;
+    --copper:#DE9C61; --copper-soft:#33251A; --copper-line:#56402C;
+    --danger:#E28D7F; --danger-soft:#3A221E;
+    --on-ink:#171512; --on-teal:#0F1F1C;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -18px rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#171512; --card:#211E1A; --sunk:#1B1916; --seg:#2C2823;
+  --ink:#EEE8DE; --ink2:#C9C0B4; --muted:#978D81; --line:#36312B;
+  --teal:#6BB5A8; --teal-soft:#1C2E2A; --teal-line:#2C4842;
+  --copper:#DE9C61; --copper-soft:#33251A; --copper-line:#56402C;
+  --danger:#E28D7F; --danger-soft:#3A221E;
+  --on-ink:#171512; --on-teal:#0F1F1C;
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -18px rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--font-body);font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;padding-bottom:64px;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:50;background:var(--bg)}
+h1,h2,h3,h4,p{margin:0}
+.wrap{max-width:1000px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+@media(max-width:480px){.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* header */
+header{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:40;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.head-in{display:flex;align-items:center;justify-content:space-between;padding-block:14px;gap:12px;flex-wrap:wrap}
+.wordmark{font-family:var(--font-disp);font-weight:700;font-size:15px;letter-spacing:.02em}
+.wordmark small{display:block;font-family:var(--font-body);font-weight:500;font-size:11px;color:var(--muted);letter-spacing:.04em;margin-top:2px}
+.chip{
+  display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11.5px;font-weight:500;
+  background:var(--teal-soft);color:var(--teal);border:1px solid var(--teal-line);
+  border-radius:999px;padding:6px 12px;white-space:nowrap;
+}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--teal)}
+
+.lead-top{font-size:13.5px;color:var(--ink2);max-width:680px;margin-top:22px}
+
+/* controls */
+.controls{
+  display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+  box-shadow:var(--shadow);padding:14px 18px;margin-top:16px;scroll-margin-top:84px;
+}
+.ctrl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ctrl-label,.k{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;background:var(--seg);border-radius:11px;padding:3px;gap:3px}
+.seg button{
+  border:0;background:transparent;color:var(--ink2);cursor:pointer;
+  font-family:var(--font-body);font-weight:600;font-size:12.5px;
+  padding:7px 12px;border-radius:8px;transition:background .2s,color .2s;white-space:nowrap;
+}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:var(--ink);color:var(--on-ink)}
+.seg.teal button.on{background:var(--teal);color:var(--on-teal)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+/* grid + cards */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.grid>*{min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:22px;min-width:0}
+@media(max-width:480px){.card{padding:18px}}
+.card-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.card-h h2{font-size:15.5px;font-weight:700;text-wrap:balance}
+.tag{font-family:var(--font-mono);font-size:11.5px;font-weight:600;color:var(--copper);background:var(--copper-soft);border-radius:8px;padding:3px 9px;white-space:nowrap}
+
+.note{font-size:12.5px;color:var(--ink2);background:var(--sunk);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 12px;margin-top:10px}
+.hint{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.45}
+.block{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line)}
+.block:first-child{margin-top:0;padding-top:0;border-top:0}
+.block>.k{display:block;margin-bottom:10px}
+
+/* fields */
+.field{display:grid;grid-template-columns:64px 1fr 86px;align-items:center;gap:12px;margin-top:10px}
+.field label{font-weight:700;font-size:13px}
+.field label small{display:block;font-weight:500;font-size:10.5px;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--teal);margin:0}
+input[type=number],select{
+  width:100%;font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--ink);
+  background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:7px 9px;
+  font-variant-numeric:tabular-nums;
+}
+select{font-family:var(--font-body);font-weight:600;font-size:13px}
+.pct{font-family:var(--font-mono);font-size:13px;font-weight:600;text-align:right}
+.salt-row{display:grid;grid-template-columns:30px 1fr 1.2fr 48px;align-items:center;gap:10px;margin-top:8px}
+.salt-row .nm{font-size:12.5px;line-height:1.3}
+.salt-row .nm small{display:block;color:var(--muted);font-family:var(--font-mono);font-size:10.5px}
+.letter{
+  width:28px;height:28px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--font-disp);font-weight:700;font-size:12px;
+  background:var(--teal-soft);color:var(--teal);border:1px solid var(--teal-line);
+}
+.letter.kh{background:var(--copper-soft);color:var(--copper);border-color:var(--copper-line)}
+.buf-ends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:4px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pair>div{min-width:0}
+.pair label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.row-flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row-flex input[type=number]{width:110px}
+.check{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2);cursor:pointer}
+.check input{accent-color:var(--teal);width:16px;height:16px}
+
+/* result */
+.big{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.big>div{background:var(--sunk);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 12px;min-width:0}
+.big .v{font-family:var(--font-mono);font-weight:600;font-size:24px;margin-top:2px;font-variant-numeric:tabular-nums}
+.big .v.copper{color:var(--copper)}
+.big .v.teal{color:var(--teal)}
+.big .s{font-size:11px;color:var(--muted)}
+@media(max-width:420px){.big .v{font-size:20px}}
+.flask{display:grid;grid-template-columns:30px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-top:1px dashed var(--line)}
+.flask:first-of-type{border-top:0}
+.flask .nm{font-size:13px;font-weight:600;min-width:0}
+.flask .nm small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+.flask .bar{height:4px;border-radius:9px;background:var(--seg);margin-top:6px;overflow:hidden}
+.flask .bar i{display:block;height:100%;width:0;background:var(--teal);transition:width .3s ease}
+.flask.kh .bar i{background:var(--copper)}
+.flask .ml{font-family:var(--font-mono);font-weight:600;font-size:20px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.flask .ml small{font-size:11px;color:var(--muted);font-weight:500;margin-left:3px}
+.flask.zero{opacity:.38}
+.ions{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}
+@media(max-width:560px){.ions{grid-template-columns:repeat(4,1fr)}}
+.ions div{background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:6px 8px;text-align:center}
+.ions b{display:block;font-family:var(--font-mono);font-weight:600;font-size:13.5px}
+.ions span{font-size:10.5px;color:var(--muted)}
+.warns{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.warn{font-size:12.5px;border-radius:10px;padding:8px 11px;border:1px solid var(--line);background:var(--sunk);color:var(--ink2)}
+.warn.ok{background:var(--teal-soft);border-color:var(--teal-line);color:var(--teal)}
+.warn.mid{background:var(--copper-soft);border-color:var(--copper-line);color:var(--ink)}
+.warn.bad{background:var(--danger-soft);border-color:var(--danger);color:var(--ink)}
+
+/* drops */
+.drops3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.drop{background:var(--sunk);border:1px solid var(--line);border-radius:var(--r-md);padding:12px;text-align:center;min-width:0}
+.drop .v{font-family:var(--font-mono);font-weight:600;font-size:38px;line-height:1.1;font-variant-numeric:tabular-nums}
+.drop .v.copper{color:var(--copper)}
+.drop .s{font-size:11px;color:var(--muted);margin-top:2px}
+@media(max-width:420px){.drop .v{font-size:30px}}
+.lvl-btn{font-family:var(--font-mono)!important}
+
+/* map */
+.section-eyebrow{font-family:var(--font-disp);font-weight:500;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin:44px 0 6px}
+.section-title{font-size:20px;font-weight:700;margin-bottom:6px;text-wrap:balance}
+.section-lead{font-size:13.5px;color:var(--ink2);max-width:660px;margin-bottom:18px}
+.map-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -6px}
+#map{display:block;width:100%;min-width:560px;height:auto;cursor:crosshair}
+#map text{font-family:var(--font-mono)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:11.5px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* формулы и закупка */
+.formula{display:block;font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--teal);margin-top:2px;white-space:nowrap}
+.formula.kh{color:var(--copper)}
+table.buy{min-width:760px}
+table.buy td{font-size:12.5px;color:var(--ink2)}
+table.buy td:first-child{width:38px}
+table.buy td b{color:var(--ink);font-weight:600}
+.no{color:var(--danger);font-weight:600}
+/* tables */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px dashed var(--line);vertical-align:top}
+td.n{font-family:var(--font-mono);font-weight:600;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:860px){.g2{grid-template-columns:1fr}}
+.g2>*{min-width:0}
+.card p{font-size:13px;color:var(--ink2)}
+.card p+p{margin-top:8px}
+.card h3{font-size:15px;font-weight:700;margin-bottom:8px}
+
+ol.steps{list-style:none;counter-reset:s;margin:0;padding:0}
+ol.steps li{counter-increment:s;position:relative;padding:9px 0 9px 36px;border-top:1px dashed var(--line);font-size:13px;color:var(--ink2)}
+ol.steps li:first-child{border-top:0}
+ol.steps li::before{
+  content:counter(s);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:50%;
+  background:var(--teal-soft);color:var(--teal);font-family:var(--font-mono);font-weight:600;font-size:12px;
+  display:flex;align-items:center;justify-content:center;
+}
+.res{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.res>div{background:var(--sunk);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 12px;min-width:0}
+.res .v{font-family:var(--font-mono);font-weight:600;font-size:21px;margin-top:2px}
+.res .s{font-size:11px;color:var(--muted)}
+.btn{
+  border:0;border-radius:12px;cursor:pointer;font-family:var(--font-body);font-weight:700;font-size:13.5px;
+  padding:11px 16px;background:var(--teal);color:var(--on-teal);transition:filter .2s;
+}
+.btn:hover{filter:brightness(1.07)}
+.btn.ghost{background:var(--seg);color:var(--ink2)}
+.btn:active{transform:scale(.98)}
+.conv{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+@media(max-width:560px){.conv{grid-template-columns:repeat(2,1fr)}}
+.conv div{background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:7px 9px}
+.conv b{display:block;font-family:var(--font-mono);font-weight:600;font-size:14px}
+.conv span{font-size:10.5px;color:var(--muted)}
+
+.fix{display:grid;grid-template-columns:1fr 1.2fr;gap:16px;padding:11px 0;border-top:1px dashed var(--line);font-size:13px}
+.fix:first-child{border-top:0}
+.fix .sym{font-weight:600}
+.fix .act{color:var(--ink2)}
+.fix .act b{font-family:var(--font-mono);font-weight:600;color:var(--teal)}
+@media(max-width:560px){.fix{grid-template-columns:1fr;gap:2px}}
+.principle{margin-top:16px;background:linear-gradient(135deg,var(--card),var(--sunk))}
+.principle h4{font-size:13.5px;font-weight:700;margin-bottom:6px;color:var(--copper)}
+
+footer{margin-top:40px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.7}
+footer a{color:var(--teal)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap head-in">
+    <div class="wordmark">ORIGAMI WATER LAB
+      <small>вода для фильтра · 5 концентратов 10 000 ppm · капли Rao/Perger</small>
+    </div>
+    <div class="chip"><span class="dot"></span><span id="chip">Melbourne · GH 50 · KH 20</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <p class="lead-top">Два способа минерализации на одних и тех же солях. Бутылка собирается из пяти концентратов по 10 000 ppm: 1 мл на литр добавляет 10 ppm. Капли в кружку идут из трёх флаконов по составу Rao/Perger, и одинаковое число капель из каждого сохраняет пропорцию Gagné. Все цифры на странице в ppm в пересчёте на CaCO3.</p>
+
+  <section class="controls" id="controls" aria-label="Режим">
+    <div class="ctrl">
+      <span class="ctrl-label">Режим</span>
+      <div class="seg teal" id="seg-mode">
+        <button data-mode="bottle" class="on">Бутылка · до заваривания</button>
+        <button data-mode="drops">Капли в кружку · после</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOTTLE ============ -->
+  <section class="grid" id="mode-bottle">
+    <div class="card">
+      <div class="block">
+        <span class="k">Рецепт</span>
+        <div class="seg" id="seg-preset"></div>
+        <div class="note" id="preset-note"></div>
+      </div>
+
+      <div class="block">
+        <span class="k">Цель в бутылке</span>
+        <div class="field">
+          <label for="in-gh">GH<small>жёсткость</small></label>
+          <input type="range" id="rg-gh" min="0" max="150" step="0.5" aria-label="GH">
+          <input type="number" id="in-gh" min="0" max="300" step="0.5">
+        </div>
+        <div class="field">
+          <label for="in-kh">KH<small>буфер</small></label>
+          <input type="range" id="rg-kh" min="0" max="60" step="0.5" aria-label="KH">
+          <input type="number" id="in-kh" min="0" max="150" step="0.5">
+        </div>
+      </div>
+
+      <div class="block">
+        <span class="k">Чем набрать жёсткость</span>
+        <div class="salt-row"><span class="letter">А</span><span class="nm">Сульфат магния<small>MgSO₄·7H₂O</small></span><input type="range" id="w0" min="0" max="100" step="1" aria-label="Доля флакона А"><span class="pct" id="pw0">100%</span></div>
+        <div class="salt-row"><span class="letter">Б</span><span class="nm">Хлорид магния<small>MgCl₂·6H₂O</small></span><input type="range" id="w1" min="0" max="100" step="1" aria-label="Доля флакона Б"><span class="pct" id="pw1">0%</span></div>
+        <div class="salt-row"><span class="letter">В</span><span class="nm">Хлорид кальция<small>CaCl₂·2H₂O</small></span><input type="range" id="w2" min="0" max="100" step="1" aria-label="Доля флакона В"><span class="pct" id="pw2">0%</span></div>
+        <p class="hint">Ползунки задают веса, доли пересчитываются в сумму 100%. Смесь Rao/Perger: 46% А, 23% Б, 31% В.</p>
+      </div>
+
+      <div class="block">
+        <span class="k">Буфер</span>
+        <div class="salt-row" style="grid-template-columns:30px 1fr 30px;margin-top:0">
+          <span class="letter kh">Г</span>
+          <input type="range" id="in-k" min="0" max="100" step="5" aria-label="Доля калиевого буфера">
+          <span class="letter kh">Д</span>
+        </div>
+        <div class="buf-ends"><span id="buf-na">сода 100%</span><span id="buf-k">калий 0%</span></div>
+        <p class="hint">Сода у части людей даёт солоноватость, калий иногда лёгкий металлический оттенок. Если заметили одно из двух, поменяйте буфер.</p>
+      </div>
+
+      <div class="block">
+        <span class="k">Объём и базовая вода</span>
+        <div class="row-flex">
+          <div class="seg" id="seg-vol">
+            <button data-vol="500">0,5 л</button>
+            <button data-vol="1000" class="on">1 л</button>
+            <button data-vol="2000">2 л</button>
+          </div>
+          <input type="number" id="in-vol" min="100" max="20000" step="50" aria-label="Объём, мл">
+          <span class="hint" style="margin:0">мл</span>
+        </div>
+        <div class="pair" style="margin-top:12px">
+          <div><label for="in-bgh">GH базы, ppm</label><input type="number" id="in-bgh" min="0" max="300" step="0.5"></div>
+          <div><label for="in-bkh">KH базы, ppm</label><input type="number" id="in-bkh" min="0" max="300" step="0.5"></div>
+        </div>
+        <p class="hint">Для дистиллята оставьте нули. Для осмоса с К7М введите результат замера: раздел ниже считает его из капель теста и подставляет сюда одной кнопкой.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <h2>Шприцем в бутылку</h2>
+        <span class="tag" id="vol-tag">на 1000 г дистиллята</span>
+      </div>
+      <div class="big">
+        <div><span class="k">GH итог</span><div class="v teal" id="r-gh">50</div><div class="s" id="r-mgca">Mg 100 · Ca 0</div></div>
+        <div><span class="k">KH итог</span><div class="v copper" id="r-kh">20</div><div class="s" id="r-nak">Na 100 · K 0</div></div>
+        <div><span class="k">GH : KH</span><div class="v" id="r-ratio">2,5</div><div class="s">цель от 2 до 3</div></div>
+      </div>
+
+      <div id="flasks" style="margin-top:14px"></div>
+
+      <div class="note" style="margin-top:6px">Порядок: сначала жёсткость (А, Б, В), взболтать, потом буфер (Г или Д) и взболтать ещё раз. Подпишите бутылку и запишите показание Xiaomi: следующая бутылка того же рецепта должна дать то же число плюс-минус 2.</div>
+
+      <div class="block">
+        <span class="k">Ионы от добавленных солей, мг/л</span>
+        <div class="ions" id="ions"></div>
+        <p class="hint" id="ions-hint">Состав базовой воды неизвестен, поэтому здесь только то, что вы добавили.</p>
+      </div>
+
+      <div class="warns" id="warns-b"></div>
+    </div>
+  </section>
+
+  <!-- ============ DROPS ============ -->
+  <section class="grid" id="mode-drops" hidden>
+    <div class="card">
+      <div class="block">
+        <span class="k">Уровень в чашке</span>
+        <div class="seg" id="seg-lvl">
+          <button class="lvl-btn" data-lvl="35">35 / 16</button>
+          <button class="lvl-btn on" data-lvl="44">44 / 20</button>
+          <button class="lvl-btn" data-lvl="55">55 / 25</button>
+          <button class="lvl-btn" data-lvl="88">88 / 40</button>
+        </div>
+        <div class="field">
+          <label for="in-dt">GH<small>KH = GH / 2,2</small></label>
+          <input type="range" id="rg-dt" min="15" max="100" step="1" aria-label="GH в чашке">
+          <input type="number" id="in-dt" min="5" max="150" step="1">
+        </div>
+        <p class="hint">44 / 20 это половина Rao/Perger, 88 / 40 полная. Уровень 35 / 16 Gemini называл «Ultra-Clean», у Gagné такого профиля нет, но как мягкая точка он рабочий.</p>
+      </div>
+
+      <div class="block">
+        <span class="k">Напиток</span>
+        <div class="row-flex">
+          <input type="number" id="in-dv" min="50" max="1000" step="5" aria-label="Масса напитка, г">
+          <span class="hint" style="margin:0">г в кружке</span>
+        </div>
+        <p class="hint">Снимите тару кружки до заваривания и взвесьте напиток. Из 14 г кофе и 225 мл воды обычно выходит от 195 до 200 г.</p>
+      </div>
+
+      <div class="block">
+        <span class="k">Масса капли</span>
+        <label class="check"><input type="checkbox" id="in-dsame"> одинаковая у всех трёх флаконов</label>
+        <div class="pair" id="dm-one" style="margin-top:10px;grid-template-columns:1fr">
+          <div><label for="dm0">Капля, г</label><input type="number" id="dm0" min="0.01" max="0.12" step="0.001"></div>
+        </div>
+        <div class="pair" id="dm-three" style="margin-top:10px;grid-template-columns:repeat(3,1fr)">
+          <div><label for="dmA">Магний, г</label><input type="number" id="dmA" min="0.01" max="0.12" step="0.001"></div>
+          <div><label for="dmB">Кальций, г</label><input type="number" id="dmB" min="0.01" max="0.12" step="0.001"></div>
+          <div><label for="dmC">Буфер, г</label><input type="number" id="dmC" min="0.01" max="0.12" step="0.001"></div>
+        </div>
+        <p class="hint">Калибровка один раз на флакон: стопка на весах 0,01 г, 20 капель, масса делится на 20. Обычно выходит от 0,03 до 0,06 г.</p>
+      </div>
+
+      <div class="block">
+        <span class="k">Сдвиг буфера</span>
+        <div class="field" style="grid-template-columns:1fr 70px">
+          <input type="range" id="in-adj" min="-4" max="6" step="1" aria-label="Сдвиг буфера, капли">
+          <span class="pct" id="adj-out">0 кап.</span>
+        </div>
+        <p class="hint">Кислотность режет: плюс одна или две капли буфера. Чашка плоская и придушенная: в следующий раз буфера на две капли меньше.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <h2>Капель из каждого флакона</h2>
+        <span class="tag" id="dv-tag">на 200 г напитка</span>
+      </div>
+      <div class="drops3">
+        <div class="drop"><span class="k">1 · Магний</span><div class="v" id="n1">8</div><div class="s" id="n1s">8,0 точно</div></div>
+        <div class="drop"><span class="k">2 · Кальций</span><div class="v" id="n2">8</div><div class="s" id="n2s">8,0 точно</div></div>
+        <div class="drop"><span class="k">3 · Буфер</span><div class="v copper" id="n3">8</div><div class="s" id="n3s">8,0 точно</div></div>
+      </div>
+      <div class="big" style="margin-top:12px">
+        <div><span class="k">GH в чашке</span><div class="v teal" id="d-gh">44</div><div class="s">Mg 69 · Ca 31</div></div>
+        <div><span class="k">KH в чашке</span><div class="v copper" id="d-kh">20</div><div class="s">Na 50 · K 50</div></div>
+        <div><span class="k">GH : KH</span><div class="v" id="d-ratio">2,2</div><div class="s">как у Rao/Perger</div></div>
+      </div>
+
+      <div class="block">
+        <span class="k">Одна капля сверху меняет</span>
+        <div class="ions" style="grid-template-columns:repeat(3,1fr)" id="perdrop"></div>
+      </div>
+
+      <div class="block">
+        <span class="k">Утром</span>
+        <ol class="steps">
+          <li>Заварите как обычно, но на дистилляте или осмосе без минерализатора.</li>
+          <li>Взвесьте напиток и поправьте массу слева, если она ушла больше чем на 10 г.</li>
+          <li>Капните из каждого флакона по таблице. Пипетка не касается кофе: иначе кофе попадёт во флакон и раствор зацветёт.</li>
+          <li>Перемешайте ложкой секунд пять. Пробуйте горячим и после остывания, примерно при 55 °C.</li>
+        </ol>
+      </div>
+      <div class="warns" id="warns-d"></div>
+    </div>
+  </section>
+
+  <!-- ============ MAP ============ -->
+  <div class="section-eyebrow">Карта</div>
+  <h2 class="section-title">Где ваша вода относительно проверенных</h2>
+  <p class="section-lead">По горизонтали общая жёсткость, по вертикали щёлочность. Клик по полю ставит цель, клик по точке выбирает рецепт. Ниже KH чашка ярче и острее, правее GH плотнее, но выше риск мела и сухости.</p>
+  <div class="card">
+    <div class="map-scroll"><svg id="map" viewBox="0 0 640 352" role="img" aria-label="Карта GH и KH с рецептами воды"></svg></div>
+    <div class="legend">
+      <span><i style="background:var(--teal-soft);border:1px solid var(--teal-line)"></i>лучшие результаты тестов: GH от 40 до 90, KH от 15 до 40</span>
+      <span><i style="border:2px solid var(--copper)"></i>ваша стартовая зона: GH от 45 до 65, KH от 15 до 25</span>
+      <span><i style="border-top:2px dashed var(--muted);height:0;border-radius:0"></i>GH : KH 2:1 и 3:1</span>
+    </div>
+  </div>
+
+  <!-- ============ FLASKS ============ -->
+  <div class="section-eyebrow">Флаконы</div>
+  <h2 class="section-title">Из чего калькулятор считает</h2>
+  <p class="section-lead">Ниже всё, что нужно для покупки: формула, молярная масса, под какими названиями соль продаётся и с чем её легко перепутать. Навески в таблицах рассчитаны строго на указанную форму соли, поэтому сверяйте с этикеткой именно формулу и число молекул воды.</p>
+
+  <div class="card">
+    <h3>Что покупать</h3>
+    <div class="tbl-wrap"><table class="buy">
+      <thead><tr><th></th><th>Соль и формула</th><th style="text-align:right">M, г/моль</th><th>Как может называться на этикетке</th><th>С чем не путать</th></tr></thead>
+      <tbody>
+        <tr><td><span class="letter">А</span></td>
+          <td><b>Магний сернокислый 7-водный</b><span class="formula">MgSO₄·7H₂O</span></td>
+          <td class="n">246,47</td>
+          <td>магния сульфат, гептагидрат магния сульфата, английская или эпсомская соль, E518; аптечный порошок «Магния сульфат», реактив ЧДА или ХЧ</td>
+          <td><span class="no">Нельзя:</span> соль для ванн с отдушками и маслами. Безводный MgSO₄ годится только с пересчётом навески (таблица ниже)</td></tr>
+        <tr><td><span class="letter">Б</span></td>
+          <td><b>Магний хлористый 6-водный</b><span class="formula">MgCl₂·6H₂O</span></td>
+          <td class="n">203,30</td>
+          <td>магния хлорид, гексагидрат магния хлорида, E511; пищевой или ЧДА</td>
+          <td><span class="no">Нельзя:</span> природный бишофит для ванн и японская нигари: в них примеси, состав не постоянный</td></tr>
+        <tr><td><span class="letter">В</span></td>
+          <td><b>Кальций хлористый 2-водный</b><span class="formula">CaCl₂·2H₂O</span></td>
+          <td class="n">147,01</td>
+          <td>кальция хлорид, дигидрат кальция хлорида, E509; продаётся для сыроделия, реактив ЧДА</td>
+          <td>Бывает безводным CaCl₂, 6-водным CaCl₂·6H₂O и готовым раствором для сыроделия неизвестной крепости. Раствор без указанной концентрации не берите. <span class="no">Нельзя:</span> технический для осушителей и противогололёдный</td></tr>
+        <tr><td><span class="letter kh">Г</span></td>
+          <td><b>Натрий двууглекислый</b><span class="formula kh">NaHCO₃</span></td>
+          <td class="n">84,01</td>
+          <td>гидрокарбонат натрия, бикарбонат натрия, пищевая сода, E500(ii)</td>
+          <td><span class="no">Нельзя:</span> кальцинированная сода Na₂CO₃ (E500(i), для стирки), каустическая сода NaOH, разрыхлитель теста (в нём кислоты и крахмал)</td></tr>
+        <tr><td><span class="letter kh">Д</span></td>
+          <td><b>Калий двууглекислый</b><span class="formula kh">KHCO₃</span></td>
+          <td class="n">100,12</td>
+          <td>гидрокарбонат калия, бикарбонат калия, E501(ii); продаётся виноделам, реактив ЧДА</td>
+          <td><span class="no">Нельзя:</span> поташ K₂CO₃ (калий углекислый, E501(i), его продают для пряников). Он даёт карбонатную, а не гидрокарбонатную щёлочность, и проверенных кофейных рецептов на нём нет</td></tr>
+        <tr><td></td>
+          <td><b>Вода дистиллированная</b><span class="formula">H₂O</span></td>
+          <td class="n">18,02</td>
+          <td>для концентратов не больше 3 на Xiaomi</td>
+          <td>Деминерализованная техническая для утюгов иногда пахнет пластиком: понюхайте и попробуйте перед использованием</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:10px">Квалификация: пищевой продукт с E-кодом, аптечная субстанция или реактив «ЧДА» (чистый для анализа) и «ХЧ» (химически чистый) подходят одинаково. «Ч» обычно тоже годится, «техн.» не берите. На этикетке ищите формулу или слова «7-водный», «гептагидрат», «·7H₂O»: от числа молекул воды зависит навеска.</p>
+    <p>Хлориды кальция и магния гигроскопичны: открытая пачка тянет воду из воздуха, и концентрат выходит слабее. Сульфат магния в сухом воздухе, наоборот, теряет кристаллизационную воду, и концентрат выходит крепче. Все соли держите в банках с плотной крышкой.</p>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3>Если купили другую форму соли</h3>
+    <p>Навеска пересчитывается через молярные массы: новая навеска = навеска из таблицы × M новой формы / M формы из таблицы. Готовые цифры для форм, которые встречаются в продаже:</p>
+    <div class="tbl-wrap"><table style="min-width:520px">
+      <thead><tr><th>Форма</th><th style="text-align:right">M, г/моль</th><th style="text-align:right">Флакон бутылки</th><th style="text-align:right">Флакон капель</th></tr></thead>
+      <tbody>
+        <tr><td>Магний сернокислый безводный <span class="formula">MgSO₄</span></td><td class="n">120,37</td><td class="n">А: 1,20 г</td><td class="n">1: 1,22 г + 1,00 г MgCl₂·6H₂O</td></tr>
+        <tr><td>Кальций хлористый безводный <span class="formula">CaCl₂</span></td><td class="n">110,98</td><td class="n">В: 1,11 г</td><td class="n">2: 0,75 г</td></tr>
+        <tr><td>Кальций хлористый 6-водный <span class="formula">CaCl₂·6H₂O</span></td><td class="n">219,08</td><td class="n">В: 2,19 г</td><td class="n">2: 1,49 г</td></tr>
+        <tr><td>Ампулы кальция хлорида 100 мг/мл, гексагидрат</td><td class="n">219,08</td><td class="n">В: 21,9 мл</td><td class="n">2: 14,9 мл</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:10px">Ампулы: нужный объём шприцем во флакон, затем дистиллят до общей массы 100,00 г, как с сухой солью. Перед покупкой проверьте, что на упаковке написано «кальция хлорида гексагидрат», а не просто «кальция хлорид». Безводный сульфат магния и безводный хлорид кальция греются при растворении и сильнее тянут воду из воздуха, отвешивайте их быстро.</p>
+  </div>
+
+  <p class="section-lead" style="margin-top:22px">Соли и дистиллят во флакон до общей массы 100,00 г на весах. Это точнее, чем доводить до метки: 1 г концентрата всегда несёт сотую часть навески. Хранить в холодильнике и темноте до месяца, при мутности, хлопьях или запахе выливать.</p>
+  <div class="g2">
+    <div class="card">
+      <h3>Пять концентратов для бутылки</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th></th><th>Соль</th><th style="text-align:right">Навеска</th><th style="text-align:right">1 мл/л</th></tr></thead>
+        <tbody>
+          <tr><td><span class="letter">А</span></td><td>Магний сернокислый 7-водный<span class="formula">MgSO₄·7H₂O</span></td><td class="n">2,46 г</td><td class="n">GH +10</td></tr>
+          <tr><td><span class="letter">Б</span></td><td>Магний хлористый 6-водный<span class="formula">MgCl₂·6H₂O</span></td><td class="n">2,03 г</td><td class="n">GH +10</td></tr>
+          <tr><td><span class="letter">В</span></td><td>Кальций хлористый 2-водный<span class="formula">CaCl₂·2H₂O</span><small style="color:var(--muted)">безводный CaCl₂: 1,11 г</small></td><td class="n">1,47 г</td><td class="n">GH +10</td></tr>
+          <tr><td><span class="letter kh">Г</span></td><td>Натрий двууглекислый (сода)<span class="formula kh">NaHCO₃</span></td><td class="n">1,68 г</td><td class="n">KH +10</td></tr>
+          <tr><td><span class="letter kh">Д</span></td><td>Калий двууглекислый<span class="formula kh">KHCO₃</span></td><td class="n">2,00 г</td><td class="n">KH +10</td></tr>
+        </tbody>
+      </table></div>
+      <p style="margin-top:10px">Миллилитр раствора весит около 1,015 г. Ошибка дозирования шприцем около 2%, на вкус она не влияет. Шприц нужен на 1 мл с делением 0,01 или на 5 мл с делением 0,1.</p>
+    </div>
+    <div class="card">
+      <h3>Три флакона для капель</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Флакон</th><th>Соли</th><th style="text-align:right">Навеска</th></tr></thead>
+        <tbody>
+          <tr><td>1 · Магний</td><td>Сульфат магния 7-водный + хлорид магния 6-водный<span class="formula">MgSO₄·7H₂O + MgCl₂·6H₂O</span></td><td class="n">2,50 + 1,00 г</td></tr>
+          <tr><td>2 · Кальций</td><td>Хлорид кальция 2-водный<span class="formula">CaCl₂·2H₂O</span><small style="color:var(--muted)">безводный CaCl₂: 0,75 г</small></td><td class="n">1,00 г</td></tr>
+          <tr><td>3 · Буфер</td><td>Сода + калий двууглекислый<span class="formula kh">NaHCO₃ + KHCO₃</span></td><td class="n">0,85 + 1,00 г</td></tr>
+        </tbody>
+      </table></div>
+      <p style="margin-top:10px">Это половина навесок Gagné, разложенная по трём флаконам. Кальций стоит отдельно от сульфата и бикарбоната, поэтому выпадать ему не с чем. На 1 г раствора в литре флакон 1 даёт GH 15,1, флакон 2 даёт GH 6,8, флакон 3 даёт KH 10,1. Отсюда формула: GH ≈ 21,9 × N × m / V, KH ≈ 10,1 × N × m / V (m в граммах, V в литрах).</p>
+    </div>
+  </div>
+
+  <!-- ============ MEASURE ============ -->
+  <div class="section-eyebrow" id="measure">Замер</div>
+  <h2 class="section-title">Как замерить GH и KH</h2>
+  <p class="section-lead">Дома это делают капельными аквариумными тестами. Реагент добавляют в пробу по капле, пока не сменится цвет: GH-тест считает кальций и магний вместе, KH-тест считает гидрокарбонаты. Тесты рассчитаны на аквариум с жёсткостью в сотни ppm, поэтому для кофейной воды пробу приходится увеличивать.</p>
+
+  <div class="g2">
+    <div class="card">
+      <h3>Когда мерить, а когда нет</h3>
+      <p>Бутылку из дистиллята и ваших концентратов мерить не нужно: калькулятор знает её состав точнее любого теста. Замер нужен в трёх случаях. Базовая вода, у вас это осмос с К7М. Проверка нового набора реагентов. И поиск ошибки, если бутылка показала на Xiaomi не то число, что в прошлый раз.</p>
+      <p>Подойдёт любой капельный тест с отдельными GH и KH, например JBL ProAquaTest или Sera. У этих наборов стандартная проба 5 мл, и одна капля равна 1 °dH, то есть 17,8 ppm. Для воды с KH 20 это одна-две капли: тест покажет почти одно и то же и при 5 ppm, и при 17. Объём пробы у своего набора сверьте по инструкции.</p>
+      <p>Тест-полоски не годятся: первая ступень шкалы у них обычно около 3 °dH, это больше 50 ppm. Xiaomi тоже не меряет ни GH, ни KH. Он переводит электропроводность в TDS по одному коэффициенту для всех солей и годится только для проверки дистиллята, мембраны и повторяемости бутылки.</p>
+    </div>
+
+    <div class="card">
+      <h3>Капельный тест на 20 мл</h3>
+      <ol class="steps">
+        <li>Если вода стояла в осмосе ночь, слейте от 1 до 1,5 л: первая порция минерализована сильнее.</li>
+        <li>Ополосните прозрачный стакан той же водой и отмерьте шприцем 20 мл пробы. Это вчетверо больше стандарта, и капля стоит уже около 4,5 ppm.</li>
+        <li>Под стакан белый лист, рядом второй стакан с той же водой без реагента. В большой пробе переход бледнее, чем в пробирке, и без образца для сравнения его легко проскочить.</li>
+        <li>Флакон вертикально, по одной капле, после каждой покачайте стакан секунд 10. GH у JBL и Sera переходит из красного в зелёный, KH из синего в жёлтый.</li>
+        <li>Считайте каплю, после которой новый цвет держится. Значение лежит между предыдущей каплей и этой.</li>
+        <li>Повторите на свежей пробе. Разошлись больше чем на каплю: третий замер и медиана.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-top:16px">
+    <div class="card">
+      <h3>Пересчёт капель в ppm</h3>
+      <div class="pair" style="grid-template-columns:repeat(3,1fr)">
+        <div><label for="t-s">Проба, мл</label><input type="number" id="t-s" min="5" max="60" step="1"></div>
+        <div><label for="t-gh">Капель GH</label><input type="number" id="t-gh" min="1" max="80" step="1" placeholder="напр. 3"></div>
+        <div><label for="t-kh">Капель KH</label><input type="number" id="t-kh" min="1" max="80" step="1" placeholder="напр. 3"></div>
+      </div>
+      <div class="pair" style="margin-top:10px">
+        <div><label for="t-fgh">Поправка набора GH</label><input type="number" id="t-fgh" min="0.3" max="3" step="0.01"></div>
+        <div><label for="t-fkh">Поправка набора KH</label><input type="number" id="t-fkh" min="0.3" max="3" step="0.01"></div>
+      </div>
+      <div class="res">
+        <div><span class="k">GH</span><div class="v" id="t-rgh">ввести капли</div><div class="s" id="t-rghs"></div></div>
+        <div><span class="k">KH</span><div class="v" id="t-rkh">ввести капли</div><div class="s" id="t-rkhs"></div></div>
+      </div>
+      <p class="hint" id="t-step">Шаг капли 4,46 ppm.</p>
+      <div class="row-flex" style="margin-top:12px">
+        <button class="btn" id="t-apply">Подставить в базовую воду</button>
+      </div>
+      <p class="hint" id="t-sanity"></p>
+    </div>
+
+    <div class="card">
+      <h3>Проверка набора по эталону</h3>
+      <p>Капли у пипеток разные, реагенты стареют. Проверка простая: 1 л дистиллята, 5,0 мл флакона А и 2,5 мл флакона Д дают ровно GH 50 и KH 25. Оттитруйте эту бутылку так же, как базовую воду.</p>
+      <div class="pair" style="grid-template-columns:repeat(3,1fr);margin-top:12px">
+        <div><label for="c-which">Реагент</label><select id="c-which"><option value="gh">GH</option><option value="kh">KH</option></select></div>
+        <div><label for="c-known">Эталон, ppm</label><input type="number" id="c-known" min="5" max="300" step="1"></div>
+        <div><label for="c-n">Капель</label><input type="number" id="c-n" min="1" max="80" step="1" placeholder="напр. 12"></div>
+      </div>
+      <div class="res">
+        <div><span class="k">Ожидалось</span><div class="v" id="c-exp">12 кап.</div><div class="s">при пробе из калькулятора слева</div></div>
+        <div><span class="k">Поправка</span><div class="v" id="c-f">ввести капли</div><div class="s" id="c-fs"></div></div>
+      </div>
+      <div class="row-flex" style="margin-top:12px">
+        <button class="btn ghost" id="c-apply">Применить поправку</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-top:16px">
+    <div class="card">
+      <h3>Перевод единиц</h3>
+      <div class="pair">
+        <div><label for="u-v">Значение</label><input type="number" id="u-v" min="0" step="0.1"></div>
+        <div><label for="u-u">Единица</label>
+          <select id="u-u">
+            <option value="ppm">ppm CaCO3</option>
+            <option value="dh">°dH, °dKH (немецкий градус)</option>
+            <option value="f">°f (французский градус)</option>
+            <option value="zh">°Ж, мг-экв/л, ммоль-экв/л</option>
+            <option value="mmol">ммоль/л Ca+Mg (только GH)</option>
+          </select>
+        </div>
+      </div>
+      <div class="conv" id="conv"></div>
+      <p class="hint">Российский градус жёсткости по ГОСТ 31865-2012 соответствует 1/2 ммоль/л кальция и магния, то есть 50 ppm. Щёлочность в отчётах лабораторий идёт в ммоль/дм³, это то же, что мг-экв/л. Лимит жёсткости для питьевой воды 7 °Ж, это 350 ppm: кофейная вода в семь раз мягче.</p>
+    </div>
+    <div class="card">
+      <h3>Точность и лаборатория</h3>
+      <p>Даже на 20 мл точность около 4,5 ppm, при KH 20 это плюс-минус 20%. Для базовой воды хватает: нужно понять, там 5 или 20. Пробу 40 мл можно взять ради шага 2,2 ppm, но переход цвета в ней почти не виден, а реагент кончается вдвое быстрее.</p>
+      <p>Проверка на здравый смысл для К7М: минерализатор растворяет карбонатный минерал за счёт CO2, поэтому GH и KH от него растут примерно поровну. KH заметно выше GH на такой воде почти наверняка значит ошибку пробы.</p>
+      <p>Точный путь лаборатория: жёсткость по ГОСТ 31954-2012 (титрование трилоном Б), щёлочность по ГОСТ 31957-2012 (титрование кислотой). Один такой анализ пригодится как опорная точка, если решите остаться на К7М.</p>
+    </div>
+  </div>
+
+  <!-- ============ CUP ============ -->
+  <div class="section-eyebrow">Отладка</div>
+  <h2 class="section-title">Как читать чашку</h2>
+  <p class="section-lead">Ориентиры из слепых тестов Royal Coffee, Five Senses и Prima, а не законы. Меняйте один параметр за раз, а помол, температуру и схему пролива в дни подбора воды не трогайте.</p>
+  <div class="card">
+    <div class="fix"><span class="sym">Кислотность режет, уксусная</span><span class="act">KH <b>плюс 5 или 10</b></span></div>
+    <div class="fix"><span class="sym">Плоско, кислотность придушена, «картон»</span><span class="act">KH <b>минус 5 или 10</b></span></div>
+    <div class="fix"><span class="sym">Пусто, водянисто, мало сладости</span><span class="act">GH <b>плюс 10 или 15</b></span></div>
+    <div class="fix"><span class="sym">Сухо и мелово, вяжет</span><span class="act">GH <b>минус 10 или 15</b>, попробовать хлорид вместо сульфата</span></div>
+    <div class="fix"><span class="sym">Солоноватость или металл</span><span class="act">Поменять буфер: соду на калий или наоборот</span></div>
+  </div>
+  <div class="card principle">
+    <h4>Свой KH за одно заваривание</h4>
+    <p>Хак Рао. Заварите 22 г на 350 мл воды с одной жёсткостью без буфера, например 5,0 мл флакона А на литр. Разлейте напиток в три чашки по 100 мл и добавьте 0,1, 0,25 и 0,4 мл флакона Г или Д: это KH плюс 10, 25 и 40. Пусть кто-нибудь переставит чашки, номера пометьте снизу. Найденный KH переносите в бутылку.</p>
+    <p>Магний против кальция и сульфат против хлорида проверяйте только вслепую и на своём зерне. Схема «магний тянет фрукты, кальций даёт тело» держится на расчётной работе Hendon 2014, а у Royal Coffee кальций, наоборот, подчёркивал кислотность.</p>
+  </div>
+
+  <footer>
+    Расчёты: коэффициенты Barista Hustle, состав Rao/Perger по <a href="https://coffeeadastra.com/2019/08/23/a-tool-and-videos-for-crafting-custom-brew-water/" target="_blank" rel="noopener">Jonathan Gagné</a>, рецепты <a href="https://www.baristahustle.com/blog/diy-water-recipes-red" target="_blank" rel="noopener">Barista Hustle</a>, <a href="https://espressoaf.com/guides/water.html" target="_blank" rel="noopener">Espresso AF</a> и <a href="https://scottrao.com/blog/lotus-water-drops" target="_blank" rel="noopener">Lotus</a>.<br>
+    Все значения в ppm как CaCO3 · подходит к Origami Brew Lab · <span class="mono">v1</span>
+  </footer>
+</main>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const num=(v,d=0)=>{const x=parseFloat(String(v).replace(',','.'));return Number.isFinite(x)?x:d;};
+const fx=(x,d)=>(Number.isFinite(x)?x:0).toFixed(d).replace('.',',');
+const fs=(x,d=1)=>{let s=(Number.isFinite(x)?x:0).toFixed(d);if(d>0)s=s.replace(/\.?0+$/,'');return s.replace('.',',');};
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+
+/* ---------- данные ----------
+   Концентраты 10 000 ppm: 1 мл на литр = +10 ppm (GH или KH как CaCO3).
+   Ионы на 1 мл/л концентрата, мг/л: 10 ppm GH = 0,0999 ммоль/л Mg или Ca; 10 ppm KH = 0,1998 ммоль/л HCO3. */
+const FL=[
+  {L:'А',name:'Сульфат магния',chem:'MgSO₄·7H₂O',kh:false,ion:{Mg:2.428,SO4:9.598}},
+  {L:'Б',name:'Хлорид магния',chem:'MgCl₂·6H₂O',kh:false,ion:{Mg:2.428,Cl:7.084}},
+  {L:'В',name:'Хлорид кальция',chem:'CaCl₂·2H₂O',kh:false,ion:{Ca:4.004,Cl:7.084}},
+  {L:'Г',name:'Сода',chem:'NaHCO₃',kh:true,ion:{Na:4.594,HCO3:12.19}},
+  {L:'Д',name:'Гидрокарбонат калия',chem:'KHCO₃',kh:true,ion:{K:7.813,HCO3:12.19}}
+];
+const ION_ORDER=[['Mg','Mg'],['Ca','Ca'],['Na','Na'],['K','K'],['Cl','Cl'],['SO4','SO₄'],['HCO3','HCO₃']];
+
+const PRESETS={
+  bhm:{n:'BH Melbourne',gh:24,kh:12,w:[100,0,0],k:0,dx:8,dy:4,anc:'start',
+    note:'GH 24, KH 12. Очень мягкая вода Barista Hustle для самых деликатных мытых лотов. На плотной Кении может оказаться пустой.'},
+  melb:{n:'Melbourne',gh:50,kh:20,w:[100,0,0],k:0,dx:0,dy:18,anc:'middle',
+    note:'Ваша текущая вода в варианте Espresso AF: сульфат магния и сода. В слепом тесте это контроль, с ней сравниваете всё остальное.'},
+  holy:{n:'Holy Water',gh:62,kh:23,w:[100,0,0],k:100,dx:9,dy:10,anc:'start',
+    note:'Сульфат магния и калиевый буфер, хлоридов нет. Кандидат под яркий фильтр, подходит и для Moccamaster с медным ТЭНом.'},
+  lb:{n:'Light & Bright',gh:60,kh:25,w:[0,0,100],k:100,dx:0,dy:-11,anc:'middle',
+    note:'Рецепт Лэнса Хедрика для Lotus: только кальций и калий. Даёт около 43 мг/л хлоридов. Сам Chapman признаёт, что на части лотов он звучит резко.'},
+  rp2:{n:'Rao/Perger ½',gh:43.5,kh:20,w:[46,23,31],k:50,dx:-9,dy:-6,anc:'end',
+    note:'Все пять солей в пропорции Gagné, вдвое мягче оригинала. Мягкий баланс для светлой обжарки и ближайший сосед вашей стартовой зоны.'},
+  rp:{n:'Rao/Perger',gh:87.5,kh:40,w:[46.3,22.9,30.9],k:50,dx:9,dy:4,anc:'start',
+    note:'Победитель слепого теста Gagné, яркая и сбалансированная вода. Для вашей любви к кислотности может оказаться тяжеловатой, поэтому держите её рядом с половинной версией как эталон.'},
+  bud:{n:'Budapest',gh:51,kh:40,w:[100,0,0],k:0,dx:9,dy:4,anc:'start',
+    note:'Barista Hustle Budapest: буфера вдвое больше обычного. Запасной вариант, если кислотность режет даже на лучшей из ваших вод.'}
+};
+const PRESET_ORDER=['bhm','melb','holy','lb','rp2','rp','bud'];
+
+/* флаконы для капель: ppm на 1 г раствора в 1 л */
+const C1=15.075, C2=6.808, C3=10.063, CGH=C1+C2, RATIO=CGH/C3;
+
+/* ---------- состояние ---------- */
+const DEF={mode:'bottle',preset:'melb',gh:50,kh:20,w:[100,0,0],k:0,vol:1000,bgh:0,bkh:0,
+  dT:44,dV:200,dSame:true,dm:[0.05,0.05,0.05],dAdj:0,
+  tS:20,tGH:'',tKH:'',fGH:1,fKH:1,cWhich:'gh',cKnown:50,cN:'',uV:3,uU:'dh'};
+let S={...DEF};
+try{const saved=JSON.parse(localStorage.getItem('owl-v1')||'null');if(saved&&typeof saved==='object')S={...DEF,...saved};}catch(e){}
+function save(){try{localStorage.setItem('owl-v1',JSON.stringify(S));}catch(e){}}
+
+/* ---------- бутылка ---------- */
+function calcBottle(){
+  let sw=S.w.reduce((a,b)=>a+b,0);
+  const sh=sw>0?S.w.map(x=>x/sw):[1,0,0];
+  const nGH=Math.max(0,S.gh-S.bgh), nKH=Math.max(0,S.kh-S.bkh);
+  const kK=S.k/100;
+  const perL=[nGH*sh[0]/10,nGH*sh[1]/10,nGH*sh[2]/10,nKH*(1-kK)/10,nKH*kK/10];
+  const vf=S.vol/1000;
+  const ml=perL.map(x=>x*vf);
+  const ions={Mg:0,Ca:0,Na:0,K:0,Cl:0,SO4:0,HCO3:0};
+  perL.forEach((x,i)=>{for(const [ion,v] of Object.entries(FL[i].ion)) ions[ion]+=x*v;});
+  const fGH=S.bgh+nGH, fKH=S.bkh+nKH;
+  return {sh,perL,ml,ions,fGH,fKH,nGH,nKH,kK};
+}
+
+function renderBottle(){
+  const r=calcBottle();
+  $('r-gh').textContent=fs(r.fGH);
+  $('r-kh').textContent=fs(r.fKH);
+  $('r-ratio').textContent=r.fKH>0?fs(r.fGH/r.fKH,1):'нет KH';
+  const mgP=Math.round((r.sh[0]+r.sh[1])*100);
+  $('r-mgca').textContent=`Mg ${mgP} · Ca ${100-mgP}`;
+  $('r-nak').textContent=`Na ${Math.round((1-r.kK)*100)} · K ${Math.round(r.kK*100)}`;
+  $('vol-tag').textContent=`на ${S.vol} г дистиллята`;
+
+  const maxml=Math.max(...r.ml,0.0001);
+  $('flasks').innerHTML=r.ml.map((m,i)=>{
+    const f=FL[i], zero=m<0.005;
+    return `<div class="flask${f.kh?' kh':''}${zero?' zero':''}">
+      <span class="letter${f.kh?' kh':''}">${f.L}</span>
+      <div class="nm">${f.name}<small>${f.chem} · ${f.kh?'KH':'GH'} +${fs(r.perL[i]*10)} ppm</small><div class="bar"><i style="width:${(m/maxml*100).toFixed(1)}%"></i></div></div>
+      <div class="ml">${zero?'0':fx(m,2)}<small>мл</small></div>
+    </div>`;
+  }).join('');
+
+  $('ions').innerHTML=ION_ORDER.map(([k,lab])=>`<div><b>${fs(r.ions[k],1)}</b><span>${lab}</span></div>`).join('');
+  $('ions-hint').textContent=(S.bgh>0||S.bkh>0)
+    ?'Состав базовой воды неизвестен, поэтому здесь только то, что вы добавили.'
+    :'На дистилляте это полный ионный состав бутылки.';
+
+  // предупреждения
+  const W=[];
+  if(S.bgh>S.gh) W.push(['bad',`Базовая вода уже даёт GH ${fs(S.bgh)}, больше цели. Разбавьте её дистиллятом или поднимите цель.`]);
+  if(S.bkh>S.kh) W.push(['bad',`Базовая вода уже даёт KH ${fs(S.bkh)}, больше цели. Без дистиллята буфер не снизить.`]);
+  const inStart=r.fGH>=45&&r.fGH<=65&&r.fKH>=15&&r.fKH<=25;
+  const inBroad=r.fGH>=40&&r.fGH<=90&&r.fKH>=15&&r.fKH<=40;
+  if(inStart) W.push(['ok','В стартовой зоне для светлого фильтра и яркой кислотности.']);
+  else if(inBroad) W.push(['ok','В зоне лучших результатов слепых тестов, но вне вашей стартовой: проверьте рядом с Holy Water или Melbourne.']);
+  if(r.fKH<15) W.push(['mid',`KH ${fs(r.fKH)}: ниже 15 чашка становится острой, кислотность легко уходит в уксус.`]);
+  if(r.fKH>40) W.push(['mid',`KH ${fs(r.fKH)}: выше 40 буфер начинает гасить ароматные кислоты.`]);
+  if(r.fKH>0){const q=r.fGH/r.fKH;
+    if(q<1.5) W.push(['mid',`GH : KH ${fs(q)}. У Royal Coffee вода с отношением около 1:1 проигрывала воде 2:1.`]);
+    if(q>3.5) W.push(['mid',`GH : KH ${fs(q)}. Буфера мало для такой жёсткости, чашка может выйти резкой и меловой.`]);}
+  if(r.fGH>110) W.push(['mid','Жёсткость выше 110: у Royal Coffee жёсткая вода давала «мутную» чашку.']);
+  if(r.ions.Cl>30) W.push(['mid',`Хлоридов ${fs(r.ions.Cl,0)} мг/л. В чайнике из нержавейки нормально, для Moccamaster с медным ТЭНом лучше сульфатный рецепт, в эспрессо-машину не лить.`]);
+  else if(r.ions.Cl>0) W.push(['',`Хлоридов ${fs(r.ions.Cl,0)} мг/л: ниже порога 30, который awasteof.coffee советует для меди и латуни. В эспрессо-машину хлоридную воду всё равно не лейте.`]);
+  const tiny=r.ml.some(m=>m>=0.005&&m<0.05);
+  if(tiny) W.push(['mid','Есть доза меньше 0,05 мл: шприцем её точно не отмерить. Готовьте 2 л или больше.']);
+  const used=r.perL.map((x,i)=>[x,i]).filter(a=>a[0]>0.0001).sort((a,b)=>b[0]-a[0]);
+  if(used.length){const [x,i]=used[0]; W.push(['',`Флакон ${FL[i].L} на 100 г хватит примерно на ${fs(100/x,0)} л этой воды, остальные уйдут медленнее. Срок хранения месяц, так что большой запас не делайте.`]);}
+  $('warns-b').innerHTML=W.map(([c,t])=>`<div class="warn ${c}">${t}</div>`).join('');
+}
+
+/* ---------- капли ---------- */
+function dropMasses(){return S.dSame?[S.dm[0],S.dm[0],S.dm[0]]:S.dm.slice();}
+function calcDrops(){
+  const Vl=S.dV/1000, m=dropMasses(), T=S.dT, KHt=T/RATIO;
+  const ex=[(C1/CGH)*T*Vl/(C1*m[0]), (C2/CGH)*T*Vl/(C2*m[1]), KHt*Vl/(C3*m[2])];
+  const N=ex.map(x=>Math.max(0,Math.round(x)));
+  N[2]=Math.max(0,N[2]+S.dAdj);
+  const gh=(C1*N[0]*m[0]+C2*N[1]*m[1])/Vl, kh=C3*N[2]*m[2]/Vl;
+  const pd=[C1*m[0]/Vl,C2*m[1]/Vl,C3*m[2]/Vl];
+  return {ex,N,gh,kh,pd,m};
+}
+function renderDrops(){
+  const r=calcDrops();
+  ['n1','n2','n3'].forEach((id,i)=>{
+    $(id).textContent=r.N[i];
+    const exact=r.ex[i];
+    $(id+'s').textContent=(i===2&&S.dAdj)?`расчёт ${fx(exact,1)}, сдвиг ${S.dAdj>0?'+':''}${S.dAdj}`
+      :(Math.abs(exact-Math.round(exact))>0.35?`расчёт ${fx(exact,1)}: ${Math.floor(exact)} или ${Math.ceil(exact)}`:`расчёт ${fx(exact,1)}`);
+  });
+  $('d-gh').textContent=fs(r.gh);
+  $('d-kh').textContent=fs(r.kh);
+  $('d-ratio').textContent=r.kh>0?fs(r.gh/r.kh,1):'нет KH';
+  $('dv-tag').textContent=`на ${S.dV} г напитка`;
+  $('adj-out').textContent=`${S.dAdj>0?'+':''}${S.dAdj} кап.`;
+  $('perdrop').innerHTML=[['GH +'+fs(r.pd[0],1),'флакон 1'],['GH +'+fs(r.pd[1],1),'флакон 2'],['KH +'+fs(r.pd[2],1),'флакон 3']]
+    .map(([a,b])=>`<div><b>${a}</b><span>${b}</span></div>`).join('');
+  const W=[];
+  if(Math.max(...r.N)>30) W.push(['mid','Больше 30 капель из флакона: считать долго и легко сбиться. Для такого уровня удобнее бутылка.']);
+  if(r.m.some(x=>x<0.025||x>0.07)) W.push(['mid','Масса капли вне обычного диапазона от 0,03 до 0,06 г. Перепроверьте калибровку на 20 каплях.']);
+  if(r.gh>=45&&r.gh<=65&&r.kh>=15&&r.kh<=25) W.push(['ok','В стартовой зоне для светлого фильтра.']);
+  W.push(['','Варите на осмосе с К7М? Часть жёсткости и буфера уже в чашке: начните с 4 или 5 капель каждого флакона и добавляйте по вкусу.']);
+  $('warns-d').innerHTML=W.map(([c,t])=>`<div class="warn ${c}">${t}</div>`).join('');
+}
+
+/* ---------- карта ---------- */
+const NS='http://www.w3.org/2000/svg';
+const MX={x0:56,x1:624,y0:16,y1:312,gmax:180,kmax:50};
+const X=g=>MX.x0+(g/MX.gmax)*(MX.x1-MX.x0);
+const Y=k=>MX.y1-(k/MX.kmax)*(MX.y1-MX.y0);
+const svg=$('map');
+function el(tag,attrs,parent=svg){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;}
+let dyn, rpLine;
+function buildMap(){
+  svg.innerHTML='';
+  el('rect',{x:X(40),y:Y(40),width:X(90)-X(40),height:Y(15)-Y(40),fill:'var(--teal-soft)',stroke:'var(--teal-line)','stroke-width':1,rx:4});
+  for(let g=0;g<=MX.gmax;g+=20){
+    el('line',{x1:X(g),y1:MX.y0,x2:X(g),y2:MX.y1,stroke:'var(--line)','stroke-width':1});
+    const t=el('text',{x:X(g),y:MX.y1+16,'text-anchor':'middle','font-size':11,fill:'var(--muted)'});t.textContent=g;
+  }
+  for(let k=0;k<=MX.kmax;k+=10){
+    el('line',{x1:MX.x0,y1:Y(k),x2:MX.x1,y2:Y(k),stroke:'var(--line)','stroke-width':1});
+    const t=el('text',{x:MX.x0-8,y:Y(k)+4,'text-anchor':'end','font-size':11,fill:'var(--muted)'});t.textContent=k;
+  }
+  const ax=el('text',{x:MX.x1,y:MX.y1+32,'text-anchor':'end','font-size':11,fill:'var(--muted)'});ax.textContent='GH, ppm CaCO3 →';
+  const ay=el('text',{x:MX.x0+6,y:MX.y0+12,'font-size':11,fill:'var(--muted)'});ay.textContent='↑ KH';
+  // отношения 2:1 и 3:1
+  [[2,'2:1'],[3,'3:1']].forEach(([q,lab])=>{
+    el('line',{x1:X(0),y1:Y(0),x2:X(q*MX.kmax),y2:Y(MX.kmax),stroke:'var(--muted)','stroke-width':1,'stroke-dasharray':'4 5',opacity:.7});
+    const t=el('text',{x:X(q*MX.kmax)+5,y:Y(MX.kmax)+12,'font-size':10.5,fill:'var(--muted)'});t.textContent=lab;
+  });
+  rpLine=el('line',{x1:X(0),y1:Y(0),x2:X(RATIO*MX.kmax),y2:Y(MX.kmax),stroke:'var(--copper)','stroke-width':3,'stroke-linecap':'round',opacity:0});
+  el('rect',{x:X(45),y:Y(25),width:X(65)-X(45),height:Y(15)-Y(25),fill:'none',stroke:'var(--copper)','stroke-width':2,rx:3});
+  // рецепты
+  PRESET_ORDER.forEach(key=>{
+    const p=PRESETS[key];
+    const g=el('g',{'data-preset':key,style:'cursor:pointer'});
+    el('circle',{cx:X(p.gh),cy:Y(p.kh),r:9,fill:'transparent'},g);
+    el('circle',{cx:X(p.gh),cy:Y(p.kh),r:4.5,fill:'var(--ink)',stroke:'var(--card)','stroke-width':1.5,class:'pdot'},g);
+    const t=el('text',{x:X(p.gh)+p.dx,y:Y(p.kh)+p.dy,'text-anchor':p.anc,'font-size':11,'font-weight':600,fill:'var(--ink2)'},g);
+    t.textContent=p.n;
+    g.addEventListener('click',e=>{e.stopPropagation();applyPreset(key);});
+  });
+  dyn=el('g',{});
+}
+function renderMap(){
+  const isB=S.mode==='bottle';
+  let gh,kh;
+  if(isB){const r=calcBottle();gh=r.fGH;kh=r.fKH;}else{const r=calcDrops();gh=r.gh;kh=r.kh;}
+  rpLine.setAttribute('opacity',isB?0:.35);
+  dyn.innerHTML='';
+  const cx=X(clamp(gh,0,MX.gmax)), cy=Y(clamp(kh,0,MX.kmax));
+  el('line',{x1:cx,y1:cy,x2:cx,y2:MX.y1,stroke:'var(--teal)','stroke-width':1,'stroke-dasharray':'2 3'},dyn);
+  el('line',{x1:MX.x0,y1:cy,x2:cx,y2:cy,stroke:'var(--teal)','stroke-width':1,'stroke-dasharray':'2 3'},dyn);
+  el('circle',{cx,cy,r:11,fill:'none',stroke:'var(--teal)','stroke-width':2.5},dyn);
+  el('circle',{cx,cy,r:3.5,fill:'var(--teal)'},dyn);
+  const right=cx<MX.x1-130;
+  const t=el('text',{x:right?cx+16:cx-16,y:cy-14,'text-anchor':right?'start':'end','font-size':12,'font-weight':600,fill:'var(--teal)'},dyn);
+  t.textContent=`${isB?'бутылка':'чашка'} · ${fs(gh)} / ${fs(kh)}`;
+  svg.querySelectorAll('g[data-preset]').forEach(g=>{
+    const on=isB&&g.dataset.preset===S.preset;
+    g.querySelector('.pdot').setAttribute('fill',on?'var(--copper)':'var(--ink)');
+  });
+}
+svg.addEventListener('click',e=>{
+  const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
+  const ctm=svg.getScreenCTM();if(!ctm)return;
+  const p=pt.matrixTransform(ctm.inverse());
+  if(p.x<MX.x0||p.x>MX.x1||p.y<MX.y0||p.y>MX.y1) return;
+  const g=Math.round(((p.x-MX.x0)/(MX.x1-MX.x0))*MX.gmax);
+  const k=Math.round(((MX.y1-p.y)/(MX.y1-MX.y0))*MX.kmax);
+  if(S.mode==='bottle'){S.gh=g;S.kh=k;S.preset='custom';}
+  else{S.dT=clamp(g,5,150);}
+  render();
+});
+
+/* ---------- замер ---------- */
+const STEP0=17.848*5;
+function renderMeasure(){
+  const step=STEP0/Math.max(1,S.tS);
+  $('t-step').textContent=`Шаг капли ${fx(step,2)} ppm при пробе ${S.tS} мл (стандарт 5 мл = 17,85 ppm). Значение лежит между предыдущей и последней каплей, в базу идёт середина.`;
+  const one=(n,f,idV,idS)=>{
+    if(n===''||num(n)<1){$(idV).textContent='ввести капли';$(idS).textContent='';return null;}
+    const N=Math.round(num(n)), s=step*f, mid=(N-0.5)*s;
+    $(idV).textContent=`≈ ${fs(mid,0)} ppm`;
+    $(idS).textContent=`от ${fs((N-1)*s,0)} до ${fs(N*s,0)} · ${fx(mid/17.848,2)} °dH`;
+    return mid;
+  };
+  const g=one(S.tGH,S.fGH,'t-rgh','t-rghs'), k=one(S.tKH,S.fKH,'t-rkh','t-rkhs');
+  $('t-apply').disabled=(g===null&&k===null);
+  $('t-apply').style.opacity=(g===null&&k===null)?.5:1;
+  $('t-sanity').textContent=(g!==null&&k!==null&&k>g+step)
+    ?'KH вышел выше GH больше чем на шаг. На осмосе с К7М так быть не должно: повторите оба замера на свежей пробе.':'';
+  // калибровка
+  const exp=Math.ceil(S.cKnown/step);
+  $('c-exp').textContent=`${exp} кап.`;
+  if(S.cN===''||num(S.cN)<1){$('c-f').textContent='ввести капли';$('c-fs').textContent='';}
+  else{
+    const f=S.cKnown/((Math.round(num(S.cN))-0.5)*step);
+    $('c-f').textContent=`× ${fx(f,2)}`;
+    $('c-fs').textContent=Math.abs(f-1)<0.12?'набор в пределах точности, можно не трогать':'набор врёт заметно, поправку лучше применить';
+  }
+  // единицы
+  const F={ppm:1,dh:17.848,f:10,zh:50.045,mmol:100.09};
+  const ppm=num(S.uV)*F[S.uU];
+  const out=[['ppm CaCO3',ppm,1],['°dH',ppm/17.848,2],['°f',ppm/10,1],['°Ж, мг-экв/л',ppm/50.045,2],['ммоль/л Ca+Mg',ppm/100.09,2]];
+  $('conv').innerHTML=out.map(([l,v,d])=>`<div><b>${fs(v,d)}</b><span>${l}</span></div>`).join('');
+}
+$('t-apply').addEventListener('click',()=>{
+  const step=STEP0/Math.max(1,S.tS);
+  if(S.tGH!==''&&num(S.tGH)>=1) S.bgh=Math.round((Math.round(num(S.tGH))-0.5)*step*S.fGH*2)/2;
+  if(S.tKH!==''&&num(S.tKH)>=1) S.bkh=Math.round((Math.round(num(S.tKH))-0.5)*step*S.fKH*2)/2;
+  S.mode='bottle';render();
+  $('controls').scrollIntoView({behavior:'smooth',block:'start'});
+});
+$('c-apply').addEventListener('click',()=>{
+  if(S.cN===''||num(S.cN)<1) return;
+  const step=STEP0/Math.max(1,S.tS);
+  const f=Math.round(S.cKnown/((Math.round(num(S.cN))-0.5)*step)*100)/100;
+  if(S.cWhich==='gh') S.fGH=f; else S.fKH=f;
+  render();
+});
+
+/* ---------- синхронизация полей ---------- */
+function setVal(id,v){const e=$(id);if(document.activeElement!==e)e.value=v;}
+function render(){
+  // режим
+  $('mode-bottle').hidden=S.mode!=='bottle';
+  $('mode-drops').hidden=S.mode!=='drops';
+  [...$('seg-mode').children].forEach(b=>b.classList.toggle('on',b.dataset.mode===S.mode));
+  // бутылка
+  [...$('seg-preset').children].forEach(b=>b.classList.toggle('on',b.dataset.p===S.preset));
+  $('preset-note').textContent=S.preset==='custom'
+    ?'Свой рецепт. Цели и доли солей заданы вручную, карта ниже показывает, где он лежит относительно проверенных вод.'
+    :PRESETS[S.preset].note;
+  setVal('rg-gh',S.gh);setVal('in-gh',S.gh);setVal('rg-kh',S.kh);setVal('in-kh',S.kh);
+  const sw=S.w.reduce((a,b)=>a+b,0);
+  S.w.forEach((w,i)=>{setVal('w'+i,w);$('pw'+i).textContent=(sw>0?Math.round(w/sw*100):(i===0?100:0))+'%';});
+  setVal('in-k',S.k);
+  $('buf-na').textContent=`сода ${100-S.k}%`;$('buf-k').textContent=`калий ${S.k}%`;
+  [...$('seg-vol').children].forEach(b=>b.classList.toggle('on',+b.dataset.vol===S.vol));
+  setVal('in-vol',S.vol);setVal('in-bgh',S.bgh);setVal('in-bkh',S.bkh);
+  // капли
+  [...$('seg-lvl').children].forEach(b=>b.classList.toggle('on',+b.dataset.lvl===S.dT));
+  setVal('rg-dt',S.dT);setVal('in-dt',S.dT);setVal('in-dv',S.dV);
+  $('in-dsame').checked=S.dSame;
+  $('dm-one').hidden=!S.dSame;$('dm-three').hidden=S.dSame;
+  setVal('dm0',S.dm[0]);setVal('dmA',S.dm[0]);setVal('dmB',S.dm[1]);setVal('dmC',S.dm[2]);
+  setVal('in-adj',S.dAdj);
+  // замер
+  setVal('t-s',S.tS);setVal('t-gh',S.tGH);setVal('t-kh',S.tKH);setVal('t-fgh',S.fGH);setVal('t-fkh',S.fKH);
+  setVal('c-which',S.cWhich);setVal('c-known',S.cKnown);setVal('c-n',S.cN);
+  setVal('u-v',S.uV);setVal('u-u',S.uU);
+
+  renderBottle();renderDrops();renderMap();renderMeasure();
+  // шапка
+  if(S.mode==='bottle'){const r=calcBottle();
+    $('chip').textContent=`${S.preset==='custom'?'Своя':PRESETS[S.preset].n} · GH ${fs(r.fGH)} · KH ${fs(r.fKH)}`;}
+  else{const r=calcDrops();$('chip').textContent=`Капли · GH ${fs(r.gh)} · KH ${fs(r.kh)}`;}
+  save();
+}
+function applyPreset(key){
+  const p=PRESETS[key];
+  S.preset=key;S.gh=p.gh;S.kh=p.kh;S.w=p.w.slice();S.k=p.k;
+  if(S.mode!=='bottle') S.mode='bottle';
+  render();
+}
+
+/* кнопки рецептов */
+$('seg-preset').innerHTML=PRESET_ORDER.map(k=>`<button data-p="${k}">${PRESETS[k].n}</button>`).join('')+'<button data-p="custom">Своя</button>';
+$('seg-preset').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.p==='custom'){S.preset='custom';render();}else applyPreset(b.dataset.p);});
+$('seg-mode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.mode=b.dataset.mode;render();});
+$('seg-vol').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.vol=+b.dataset.vol;render();});
+$('seg-lvl').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.dT=+b.dataset.lvl;render();});
+
+const bind=(id,fn)=>$(id).addEventListener('input',e=>{fn(e.target.value);render();});
+bind('rg-gh',v=>{S.gh=num(v);S.preset='custom';});
+bind('in-gh',v=>{S.gh=clamp(num(v),0,300);S.preset='custom';});
+bind('rg-kh',v=>{S.kh=num(v);S.preset='custom';});
+bind('in-kh',v=>{S.kh=clamp(num(v),0,150);S.preset='custom';});
+[0,1,2].forEach(i=>bind('w'+i,v=>{S.w[i]=num(v);S.preset='custom';}));
+bind('in-k',v=>{S.k=num(v);S.preset='custom';});
+bind('in-vol',v=>{S.vol=clamp(Math.round(num(v,1000)),100,20000);});
+bind('in-bgh',v=>{S.bgh=clamp(num(v),0,300);});
+bind('in-bkh',v=>{S.bkh=clamp(num(v),0,300);});
+bind('rg-dt',v=>{S.dT=num(v,44);});
+bind('in-dt',v=>{S.dT=clamp(num(v,44),5,150);});
+bind('in-dv',v=>{S.dV=clamp(num(v,200),50,1000);});
+$('in-dsame').addEventListener('change',e=>{S.dSame=e.target.checked;if(S.dSame)S.dm=[S.dm[0],S.dm[0],S.dm[0]];render();});
+bind('dm0',v=>{S.dm[0]=clamp(num(v,0.05),0.01,0.12);});
+bind('dmA',v=>{S.dm[0]=clamp(num(v,0.05),0.01,0.12);});
+bind('dmB',v=>{S.dm[1]=clamp(num(v,0.05),0.01,0.12);});
+bind('dmC',v=>{S.dm[2]=clamp(num(v,0.05),0.01,0.12);});
+bind('in-adj',v=>{S.dAdj=Math.round(num(v));});
+bind('t-s',v=>{S.tS=clamp(num(v,20),5,60);});
+bind('t-gh',v=>{S.tGH=v;});
+bind('t-kh',v=>{S.tKH=v;});
+bind('t-fgh',v=>{S.fGH=clamp(num(v,1),0.3,3);});
+bind('t-fkh',v=>{S.fKH=clamp(num(v,1),0.3,3);});
+$('c-which').addEventListener('change',e=>{S.cWhich=e.target.value;S.cKnown=S.cWhich==='gh'?50:25;render();});
+bind('c-known',v=>{S.cKnown=clamp(num(v,50),5,300);});
+bind('c-n',v=>{S.cN=v;});
+bind('u-v',v=>{S.uV=num(v);});
+$('u-u').addEventListener('change',e=>{S.uU=e.target.value;render();});
+
+buildMap();
+render();
+</script>
+
+</body>
+</html>
