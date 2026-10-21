@@ -195,6 +195,11 @@ select{font-family:var(--font-body);font-weight:600;font-size:13px}
 .legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:11.5px;color:var(--muted);margin-top:10px}
 .legend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 
+.btn.small{padding:7px 12px;font-size:12.5px}
+.base-src{color:var(--teal);font-weight:600}
+.base-src:empty{display:none}
+.flash{animation:fl 1.6s ease-out}
+@keyframes fl{0%{background:var(--teal-soft);box-shadow:0 0 0 8px var(--teal-soft)}100%{background:transparent;box-shadow:0 0 0 8px transparent}}
 /* формулы и закупка */
 .formula{display:block;font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--teal);margin-top:2px;white-space:nowrap}
 .formula.kh{color:var(--copper)}
@@ -252,7 +257,7 @@ ol.steps li::before{
 
 footer{margin-top:40px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.7}
 footer a{color:var(--teal)}
-@media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
@@ -321,7 +326,7 @@ footer a{color:var(--teal)}
         <p class="hint">Сода у части людей даёт солоноватость, калий иногда лёгкий металлический оттенок. Если заметили одно из двух, поменяйте буфер.</p>
       </div>
 
-      <div class="block">
+      <div class="block" id="b-base">
         <span class="k">Объём и базовая вода</span>
         <div class="row-flex">
           <div class="seg" id="seg-vol">
@@ -336,7 +341,9 @@ footer a{color:var(--teal)}
           <div><label for="in-bgh">GH базы, ppm</label><input type="number" id="in-bgh" min="0" max="300" step="0.5"></div>
           <div><label for="in-bkh">KH базы, ppm</label><input type="number" id="in-bkh" min="0" max="300" step="0.5"></div>
         </div>
-        <p class="hint">Для дистиллята оставьте нули. Для осмоса с К7М введите результат замера: раздел ниже считает его из капель теста и подставляет сюда одной кнопкой.</p>
+        <p class="hint base-src"></p>
+        <div class="row-flex" style="margin-top:8px"><button class="btn ghost small" data-reset>Сбросить на дистиллят</button></div>
+        <p class="hint">Для дистиллята оставьте нули. Для воды из фильтра введите результат замера: раздел «Замер» ниже считает его из капель теста и подставляет сюда одной кнопкой. Поля общие с режимом капель.</p>
       </div>
     </div>
 
@@ -393,6 +400,17 @@ footer a{color:var(--teal)}
         <p class="hint">Снимите тару кружки до заваривания и взвесьте напиток. Из 14 г кофе и 225 мл воды обычно выходит от 195 до 200 г.</p>
       </div>
 
+      <div class="block" id="d-base">
+        <span class="k">Базовая вода</span>
+        <div class="pair">
+          <div><label for="in-dbgh">GH базы, ppm</label><input type="number" id="in-dbgh" min="0" max="300" step="0.5"></div>
+          <div><label for="in-dbkh">KH базы, ppm</label><input type="number" id="in-dbkh" min="0" max="300" step="0.5"></div>
+        </div>
+        <p class="hint base-src"></p>
+        <div class="row-flex" style="margin-top:8px"><button class="btn ghost small" data-reset>Сбросить на дистиллят</button></div>
+        <p class="hint">Вода, на которой вы завариваете. Её минералы уже в чашке, поэтому капли добавляют только недостающее. Для дистиллята нули. Поля общие с режимом бутылки.</p>
+      </div>
+
       <div class="block">
         <span class="k">Масса капли</span>
         <label class="check"><input type="checkbox" id="in-dsame"> одинаковая у всех трёх флаконов</label>
@@ -428,9 +446,9 @@ footer a{color:var(--teal)}
         <div class="drop"><span class="k">3 · Буфер</span><div class="v copper" id="n3">8</div><div class="s" id="n3s">8,0 точно</div></div>
       </div>
       <div class="big" style="margin-top:12px">
-        <div><span class="k">GH в чашке</span><div class="v teal" id="d-gh">44</div><div class="s">Mg 69 · Ca 31</div></div>
-        <div><span class="k">KH в чашке</span><div class="v copper" id="d-kh">20</div><div class="s">Na 50 · K 50</div></div>
-        <div><span class="k">GH : KH</span><div class="v" id="d-ratio">2,2</div><div class="s">как у Rao/Perger</div></div>
+        <div><span class="k">GH в чашке</span><div class="v teal" id="d-gh">44</div><div class="s" id="d-ghs">Mg 69 · Ca 31</div></div>
+        <div><span class="k">KH в чашке</span><div class="v copper" id="d-kh">20</div><div class="s" id="d-khs">Na 50 · K 50</div></div>
+        <div><span class="k">GH : KH</span><div class="v" id="d-ratio">2,2</div><div class="s" id="d-ratios">цель 2,2</div></div>
       </div>
 
       <div class="block">
@@ -441,7 +459,7 @@ footer a{color:var(--teal)}
       <div class="block">
         <span class="k">Утром</span>
         <ol class="steps">
-          <li>Заварите как обычно, но на дистилляте или осмосе без минерализатора.</li>
+          <li>Заварите как обычно на той воде, что указана как базовая: дистиллят или вода из фильтра.</li>
           <li>Взвесьте напиток и поправьте массу слева, если она ушла больше чем на 10 г.</li>
           <li>Капните из каждого флакона по таблице. Пипетка не касается кофе: иначе кофе попадёт во флакон и раствор зацветёт.</li>
           <li>Перемешайте ложкой секунд пять. Пробуйте горячим и после остывания, примерно при 55 °C.</li>
@@ -601,6 +619,7 @@ footer a{color:var(--teal)}
       <div class="row-flex" style="margin-top:12px">
         <button class="btn" id="t-apply">Подставить в базовую воду</button>
       </div>
+      <p class="hint">Значения попадут в оба режима, бутылку и капли, режим не переключится. Сменили картриджи или мембрану: замерьте заново или нажмите «Сбросить на дистиллят» у полей базовой воды.</p>
       <p class="hint" id="t-sanity"></p>
     </div>
 
@@ -643,7 +662,7 @@ footer a{color:var(--teal)}
     <div class="card">
       <h3>Точность и лаборатория</h3>
       <p>Даже на 20 мл точность около 4,5 ppm, при KH 20 это плюс-минус 20%. Для базовой воды хватает: нужно понять, там 5 или 20. Пробу 40 мл можно взять ради шага 2,2 ppm, но переход цвета в ней почти не виден, а реагент кончается вдвое быстрее.</p>
-      <p>Проверка на здравый смысл для К7М: минерализатор растворяет карбонатный минерал за счёт CO2, поэтому GH и KH от него растут примерно поровну. KH заметно выше GH на такой воде почти наверняка значит ошибку пробы.</p>
+      <p>Проверка на здравый смысл для К7М: минерализатор растворяет карбонатный минерал за счёт CO2, поэтому GH и KH от него растут примерно поровну. Если KH вышел выше GH на две капли и больше, сначала повторите замер. Разница в одну каплю лежит в пределах точности теста.</p>
       <p>Точный путь лаборатория: жёсткость по ГОСТ 31954-2012 (титрование трилоном Б), щёлочность по ГОСТ 31957-2012 (титрование кислотой). Один такой анализ пригодится как опорная точка, если решите остаться на К7М.</p>
     </div>
   </div>
@@ -715,7 +734,7 @@ const C1=15.075, C2=6.808, C3=10.063, CGH=C1+C2, RATIO=CGH/C3;
 /* ---------- состояние ---------- */
 const DEF={mode:'bottle',preset:'melb',gh:50,kh:20,w:[100,0,0],k:0,vol:1000,bgh:0,bkh:0,
   dT:44,dV:200,dSame:true,dm:[0.05,0.05,0.05],dAdj:0,
-  tS:20,tGH:'',tKH:'',fGH:1,fKH:1,cWhich:'gh',cKnown:50,cN:'',uV:3,uU:'dh'};
+  tS:20,tGH:'',tKH:'',baseSrc:'',fGH:1,fKH:1,cWhich:'gh',cKnown:50,cN:'',uV:3,uU:'dh'};
 let S={...DEF};
 try{const saved=JSON.parse(localStorage.getItem('owl-v1')||'null');if(saved&&typeof saved==='object')S={...DEF,...saved};}catch(e){}
 function save(){try{localStorage.setItem('owl-v1',JSON.stringify(S));}catch(e){}}
@@ -787,12 +806,13 @@ function renderBottle(){
 function dropMasses(){return S.dSame?[S.dm[0],S.dm[0],S.dm[0]]:S.dm.slice();}
 function calcDrops(){
   const Vl=S.dV/1000, m=dropMasses(), T=S.dT, KHt=T/RATIO;
-  const ex=[(C1/CGH)*T*Vl/(C1*m[0]), (C2/CGH)*T*Vl/(C2*m[1]), KHt*Vl/(C3*m[2])];
+  const addGH=Math.max(0,T-S.bgh), addKH=Math.max(0,KHt-S.bkh);
+  const ex=[addGH*Vl/(CGH*m[0]), addGH*Vl/(CGH*m[1]), addKH*Vl/(C3*m[2])];
   const N=ex.map(x=>Math.max(0,Math.round(x)));
   N[2]=Math.max(0,N[2]+S.dAdj);
-  const gh=(C1*N[0]*m[0]+C2*N[1]*m[1])/Vl, kh=C3*N[2]*m[2]/Vl;
+  const dGH=(C1*N[0]*m[0]+C2*N[1]*m[1])/Vl, dKH=C3*N[2]*m[2]/Vl;
   const pd=[C1*m[0]/Vl,C2*m[1]/Vl,C3*m[2]/Vl];
-  return {ex,N,gh,kh,pd,m};
+  return {ex,N,gh:S.bgh+dGH,kh:S.bkh+dKH,dGH,dKH,pd,m,KHt};
 }
 function renderDrops(){
   const r=calcDrops();
@@ -806,6 +826,10 @@ function renderDrops(){
   $('d-kh').textContent=fs(r.kh);
   $('d-ratio').textContent=r.kh>0?fs(r.gh/r.kh,1):'нет KH';
   $('dv-tag').textContent=`на ${S.dV} г напитка`;
+  const hasBase=S.bgh>0||S.bkh>0;
+  $('d-ghs').textContent=hasBase?`база ${fs(S.bgh)} + капли ${fs(r.dGH)}`:'Mg 69 · Ca 31';
+  $('d-khs').textContent=hasBase?`база ${fs(S.bkh)} + капли ${fs(r.dKH)}`:'Na 50 · K 50';
+  $('d-ratios').textContent=`цель ${fx(RATIO,1)}`;
   $('adj-out').textContent=`${S.dAdj>0?'+':''}${S.dAdj} кап.`;
   $('perdrop').innerHTML=[['GH +'+fs(r.pd[0],1),'флакон 1'],['GH +'+fs(r.pd[1],1),'флакон 2'],['KH +'+fs(r.pd[2],1),'флакон 3']]
     .map(([a,b])=>`<div><b>${a}</b><span>${b}</span></div>`).join('');
@@ -813,7 +837,10 @@ function renderDrops(){
   if(Math.max(...r.N)>30) W.push(['mid','Больше 30 капель из флакона: считать долго и легко сбиться. Для такого уровня удобнее бутылка.']);
   if(r.m.some(x=>x<0.025||x>0.07)) W.push(['mid','Масса капли вне обычного диапазона от 0,03 до 0,06 г. Перепроверьте калибровку на 20 каплях.']);
   if(r.gh>=45&&r.gh<=65&&r.kh>=15&&r.kh<=25) W.push(['ok','В стартовой зоне для светлого фильтра.']);
-  W.push(['','Варите на осмосе с К7М? Часть жёсткости и буфера уже в чашке: начните с 4 или 5 капель каждого флакона и добавляйте по вкусу.']);
+  if(S.bgh>S.dT) W.push(['bad',`Базовая вода уже даёт GH ${fs(S.bgh)}, больше цели ${fs(S.dT)}. Флаконы 1 и 2 не нужны, а снизить GH можно только дистиллятом.`]);
+  if(S.bkh>0&&r.ex[2]<0.5) W.push(['ok',`Буфер уже в базовой воде: KH ${fs(S.bkh)} при цели ${fs(r.KHt)}. Флакон 3 не нужен${S.dAdj>0?', сдвиг слева добавляет его сверх цели':''}.`]);
+  if(S.bkh>r.KHt+5) W.push(['mid',`KH базы выше цели на ${fs(S.bkh-r.KHt)}. Выберите уровень повыше или разбавьте воду из фильтра дистиллятом.`]);
+  if(!hasBase) W.push(['','Варите на воде из фильтра? Замерьте её тестом (раздел «Замер» ниже) и подставьте результат: капли посчитаются с её учётом.']);
   $('warns-d').innerHTML=W.map(([c,t])=>`<div class="warn ${c}">${t}</div>`).join('');
 }
 
@@ -903,8 +930,13 @@ function renderMeasure(){
   const g=one(S.tGH,S.fGH,'t-rgh','t-rghs'), k=one(S.tKH,S.fKH,'t-rkh','t-rkhs');
   $('t-apply').disabled=(g===null&&k===null);
   $('t-apply').style.opacity=(g===null&&k===null)?.5:1;
-  $('t-sanity').textContent=(g!==null&&k!==null&&k>g+step)
-    ?'KH вышел выше GH больше чем на шаг. На осмосе с К7М так быть не должно: повторите оба замера на свежей пробе.':'';
+  let san='';
+  if(g!==null&&k!==null){
+    const dd=Math.round(num(S.tKH))-Math.round(num(S.tGH));
+    if(dd>=2) san='KH выше GH на две капли и больше. После минерализатора они обычно близки: повторите оба замера на свежей пробе. Если результат тот же, возможная причина в изношенной мембране, которая пропускает больше натрия и гидрокарбоната из исходной воды.';
+    else if(Math.abs(dd)===1) san='Разница GH и KH в одну каплю лежит в пределах точности теста.';
+  }
+  $('t-sanity').textContent=san;
   // калибровка
   const exp=Math.ceil(S.cKnown/step);
   $('c-exp').textContent=`${exp} кап.`;
@@ -921,12 +953,18 @@ function renderMeasure(){
   $('conv').innerHTML=out.map(([l,v,d])=>`<div><b>${fs(v,d)}</b><span>${l}</span></div>`).join('');
 }
 $('t-apply').addEventListener('click',()=>{
-  const step=STEP0/Math.max(1,S.tS);
-  if(S.tGH!==''&&num(S.tGH)>=1) S.bgh=Math.round((Math.round(num(S.tGH))-0.5)*step*S.fGH*2)/2;
-  if(S.tKH!==''&&num(S.tKH)>=1) S.bkh=Math.round((Math.round(num(S.tKH))-0.5)*step*S.fKH*2)/2;
-  S.mode='bottle';render();
-  $('controls').scrollIntoView({behavior:'smooth',block:'start'});
+  const step=STEP0/Math.max(1,S.tS), parts=[];
+  if(S.tGH!==''&&num(S.tGH)>=1){S.bgh=Math.round((Math.round(num(S.tGH))-0.5)*step*S.fGH*2)/2;parts.push(`GH ${Math.round(num(S.tGH))} кап.`);}
+  if(S.tKH!==''&&num(S.tKH)>=1){S.bkh=Math.round((Math.round(num(S.tKH))-0.5)*step*S.fKH*2)/2;parts.push(`KH ${Math.round(num(S.tKH))} кап.`);}
+  if(!parts.length) return;
+  let ds='';try{ds=new Date().toLocaleDateString('ru-RU');}catch(e){}
+  S.baseSrc=`Из замера${ds?' '+ds:''}: ${parts.join(', ')} на ${S.tS} мл.`;
+  render();
+  const t=$(S.mode==='drops'?'d-base':'b-base');
+  t.scrollIntoView({behavior:'smooth',block:'center'});
+  t.classList.remove('flash');void t.offsetWidth;t.classList.add('flash');
 });
+document.querySelectorAll('[data-reset]').forEach(b=>b.addEventListener('click',()=>{S.bgh=0;S.bkh=0;S.baseSrc='';render();}));
 $('c-apply').addEventListener('click',()=>{
   if(S.cN===''||num(S.cN)<1) return;
   const step=STEP0/Math.max(1,S.tS);
@@ -954,6 +992,8 @@ function render(){
   $('buf-na').textContent=`сода ${100-S.k}%`;$('buf-k').textContent=`калий ${S.k}%`;
   [...$('seg-vol').children].forEach(b=>b.classList.toggle('on',+b.dataset.vol===S.vol));
   setVal('in-vol',S.vol);setVal('in-bgh',S.bgh);setVal('in-bkh',S.bkh);
+  setVal('in-dbgh',S.bgh);setVal('in-dbkh',S.bkh);
+  document.querySelectorAll('.base-src').forEach(e=>{e.textContent=(S.baseSrc&&(S.bgh>0||S.bkh>0))?S.baseSrc:'';});
   // капли
   [...$('seg-lvl').children].forEach(b=>b.classList.toggle('on',+b.dataset.lvl===S.dT));
   setVal('rg-dt',S.dT);setVal('in-dt',S.dT);setVal('in-dv',S.dV);
@@ -996,8 +1036,10 @@ bind('in-kh',v=>{S.kh=clamp(num(v),0,150);S.preset='custom';});
 [0,1,2].forEach(i=>bind('w'+i,v=>{S.w[i]=num(v);S.preset='custom';}));
 bind('in-k',v=>{S.k=num(v);S.preset='custom';});
 bind('in-vol',v=>{S.vol=clamp(Math.round(num(v,1000)),100,20000);});
-bind('in-bgh',v=>{S.bgh=clamp(num(v),0,300);});
-bind('in-bkh',v=>{S.bkh=clamp(num(v),0,300);});
+bind('in-bgh',v=>{S.bgh=clamp(num(v),0,300);S.baseSrc='';});
+bind('in-bkh',v=>{S.bkh=clamp(num(v),0,300);S.baseSrc='';});
+bind('in-dbgh',v=>{S.bgh=clamp(num(v),0,300);S.baseSrc='';});
+bind('in-dbkh',v=>{S.bkh=clamp(num(v),0,300);S.baseSrc='';});
 bind('rg-dt',v=>{S.dT=num(v,44);});
 bind('in-dt',v=>{S.dT=clamp(num(v,44),5,150);});
 bind('in-dv',v=>{S.dV=clamp(num(v,200),50,1000);});
