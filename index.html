@@ -739,7 +739,7 @@ const C1=15.075, C2=6.808, C3=10.063, CGH=C1+C2, RATIO=CGH/C3;
 
 /* ---------- состояние ---------- */
 const DEF={mode:'bottle',preset:'melb',gh:50,kh:20,w:[100,0,0],k:0,vol:1000,bgh:0,bkh:0,
-  dT:44,dV:200,dSame:true,dm:[0.05,0.05,0.05],dAdj:0,
+  dT:44,dV:200,dSame:true,dm:[0.066,0.066,0.066],dAdj:0,
   tS:20,tGH:'',tKH:'',baseSrc:'',fGH:1,fKH:1,cWhich:'gh',cKnown:50,cN:'',uV:3,uU:'dh'};
 let S={...DEF};
 try{const saved=JSON.parse(localStorage.getItem('owl-v1')||'null');if(saved&&typeof saved==='object')S={...DEF,...saved};}catch(e){}
@@ -841,7 +841,7 @@ function renderDrops(){
     .map(([a,b])=>`<div><b>${a}</b><span>${b}</span></div>`).join('');
   const W=[];
   if(Math.max(...r.N)>30) W.push(['mid','Больше 30 капель из флакона: считать долго и легко сбиться. Для такого уровня удобнее бутылка.']);
-  if(r.m.some(x=>x<0.025||x>0.07)) W.push(['mid','Масса капли вне обычного диапазона от 0,03 до 0,06 г. Перепроверьте калибровку на 20 каплях.']);
+  if(r.m.some(x=>x<0.025||x>0.07)) W.push(['mid','Масса капли вне обычного диапазона от 0,03 до 0,07 г. Перепроверьте калибровку на 20 каплях.']);
   if(r.gh>=45&&r.gh<=65&&r.kh>=15&&r.kh<=25) W.push(['ok','В стартовой зоне для светлого фильтра.']);
   if(S.bgh>S.dT) W.push(['bad',`Базовая вода уже даёт GH ${fs(S.bgh)}, больше цели ${fs(S.dT)}. Флаконы 1 и 2 не нужны, а снизить GH можно только дистиллятом.`]);
   if(S.bkh>0&&r.ex[2]<0.5) W.push(['ok',`Буфер уже в базовой воде: KH ${fs(S.bkh)} при цели ${fs(r.KHt)}. Флакон 3 не нужен${S.dAdj>0?', сдвиг слева добавляет его сверх цели':''}.`]);
@@ -1050,10 +1050,10 @@ bind('rg-dt',v=>{S.dT=num(v,44);});
 bind('in-dt',v=>{S.dT=clamp(num(v,44),5,150);});
 bind('in-dv',v=>{S.dV=clamp(num(v,200),50,1000);});
 $('in-dsame').addEventListener('change',e=>{S.dSame=e.target.checked;if(S.dSame)S.dm=[S.dm[0],S.dm[0],S.dm[0]];render();});
-bind('dm0',v=>{S.dm[0]=clamp(num(v,0.05),0.01,0.12);});
-bind('dmA',v=>{S.dm[0]=clamp(num(v,0.05),0.01,0.12);});
-bind('dmB',v=>{S.dm[1]=clamp(num(v,0.05),0.01,0.12);});
-bind('dmC',v=>{S.dm[2]=clamp(num(v,0.05),0.01,0.12);});
+bind('dm0',v=>{S.dm[0]=clamp(num(v,0.066),0.01,0.12);});
+bind('dmA',v=>{S.dm[0]=clamp(num(v,0.066),0.01,0.12);});
+bind('dmB',v=>{S.dm[1]=clamp(num(v,0.066),0.01,0.12);});
+bind('dmC',v=>{S.dm[2]=clamp(num(v,0.066),0.01,0.12);});
 bind('in-adj',v=>{S.dAdj=Math.round(num(v));});
 bind('t-s',v=>{S.tS=clamp(num(v,20),5,60);});
 bind('t-gh',v=>{S.tGH=v;});
